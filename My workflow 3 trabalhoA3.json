@@ -1,0 +1,167 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -624,
+        96
+      ],
+      "id": "e29437fd-a276-40f4-9401-f781475a1f35",
+      "name": "Webhook",
+      "webhookId": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed"
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -416,
+        96
+      ],
+      "id": "463b2002-1fba-4f45-b8ab-b52353125ad1",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "77c57cd6-16e8-495b-9630-b1d9c70863e1",
+              "leftValue": "={{$json.bitcoin.usd}}",
+              "rightValue": "={{$('Webhook').item.json.body.preco_alvo}}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "d5ff37ad-1fad-4e1f-8834-0eed74937475",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "Bitcoin abaixo do seu preço alvo!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6a87876d-5315-48e0-9da6-592ecb7daa60",
+      "name": "Send a text message",
+      "webhookId": "35d39f3a-ee21-4c5e-890b-cbbf4d694588",
+      "credentials": {
+        "telegramApi": {
+          "id": "NIS6I5PW1Sr1qvyU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "Bitcoin acima do seu preço alvo!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "0217e148-cf4d-465d-8f72-e79c3892ca96",
+      "name": "Send a text message1",
+      "webhookId": "35d39f3a-ee21-4c5e-890b-cbbf4d694588",
+      "credentials": {
+        "telegramApi": {
+          "id": "NIS6I5PW1Sr1qvyU",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "993833cc-17de-483a-8e2f-90ae610c2295",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "s70XoKHOvPAem3AM",
+  "tags": []
+}

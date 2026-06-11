@@ -1,0 +1,199 @@
+{
+  "name": "Fluxo Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "gmail-alerta",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8d383a79-1ef3-416a-8f3c-19cec8e88454",
+      "name": "Webhook",
+      "webhookId": "b363b546-f3bd-43d3-9e35-7ffbe89c33d2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6dea0e7d-4d2e-4cfc-909a-1cd2ce57869f",
+              "leftValue": "={{ $json.query.palavra }}",
+              "rightValue": "urgente",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b5b12a67-a731-4a7a-ac97-1faa692f042c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "guict0805@gmail.com",
+        "toEmail": "trabalhoa3exploracaodigital@gmail.com",
+        "subject": "🚨 URGENTE recebido via Webhook - N8N",
+        "emailFormat": "text",
+        "text": "URGENTE recebido via Webhook!\n\nEste e-mail foi disparado automaticamente pelo fluxo N8N - Fluxo Gmail.\n\nHorario: {{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "e72aef29-3c12-4fee-a3d9-1ac003a642a4",
+      "name": "Send an Email",
+      "webhookId": "9b95f252-f843-4dbd-ba33-48e333efd8db",
+      "credentials": {
+        "smtp": {
+          "id": "1g0kfhCteHa8lLx5",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "9de69299-0469-4da5-a3c5-6904c3c3b135",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "fromEmail": "guict0805@gmail.com",
+        "toEmail": "trabalhoa3exploracaodigital@gmail.com",
+        "subject": "✅ Mensagem NORMAL recebida via Webhook - N8N",
+        "emailFormat": "text",
+        "text": "=Mensagem NORMAL recebida via Webhook!\n\nEste e-mail foi disparado automaticamente pelo fluxo N8N - Fluxo Gmail.\n\nHorario: {{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}\nPalavra recebida: {{ $json.query.palavra }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        96
+      ],
+      "id": "17179cff-8d53-4499-8c62-a76fc887bfb5",
+      "name": "Send an Email1",
+      "webhookId": "3a2f04b0-3839-4e35-a420-8c8b9c4fd514",
+      "credentials": {
+        "smtp": {
+          "id": "1g0kfhCteHa8lLx5",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "✅ E-mail NORMAL enviado com sucesso!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        96
+      ],
+      "id": "3e1c944e-ad92-4e3e-8196-2a31cc558046",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e07a1b7a-08ed-468f-831c-f3de8b821e87",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "FW39mUT4mRK8Mteg",
+  "tags": []
+}

@@ -1,0 +1,264 @@
+{
+  "name": "Tarefa 5 - Analise de Sentimentos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1104,
+        112
+      ],
+      "id": "7c811720-1fc6-499f-a64b-f55c698e3084",
+      "name": "Webhook",
+      "webhookId": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed"
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -880,
+        112
+      ],
+      "id": "5eb13976-6a5c-4dce-bbda-ef9321f17397",
+      "name": "HTTP Request - Bitcoin Price"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analise de Sentimentos por palavras-chave\n// Recebe o texto do campo 'mensagem' enviado no body do webhook\n\nconst texto = $('Webhook').item.json.body.mensagem || '';\nconst textoLower = texto.toLowerCase();\n\n// Palavras positivas\nconst palavrasPositivas = [\n  'otimo', 'otima', 'excelente', 'bom', 'boa', 'maravilhoso', 'maravilhosa',\n  'perfeito', 'perfeita', 'incrivel', 'fantastico', 'fantastica', 'amei',\n  'adorei', 'gostei', 'feliz', 'alegre', 'satisfeito', 'satisfeita',\n  'recomendo', 'aprovado', 'aprovei', 'positivo', 'subiu', 'alta', 'lucro',\n  'ganho', 'valorizou', 'cresceu', 'subindo', 'aumento'\n];\n\n// Palavras negativas\nconst palavrasNegativas = [\n  'ruim', 'pessimo', 'pessima', 'terrivel', 'horrivel', 'odiei', 'odio',\n  'nao gostei', 'problema', 'erro', 'falha', 'decepcionante', 'triste',\n  'insatisfeito', 'insatisfeita', 'reprovado', 'negativo', 'caiu', 'baixa',\n  'prejuizo', 'perda', 'desvalorizou', 'caindo', 'queda', 'despencou'\n];\n\nlet pontuacao = 0;\nconst encontradas = { positivas: [], negativas: [] };\n\nfor (const palavra of palavrasPositivas) {\n  if (textoLower.includes(palavra)) {\n    pontuacao += 1;\n    encontradas.positivas.push(palavra);\n  }\n}\n\nfor (const palavra of palavrasNegativas) {\n  if (textoLower.includes(palavra)) {\n    pontuacao -= 1;\n    encontradas.negativas.push(palavra);\n  }\n}\n\nlet sentimento;\nif (pontuacao > 0) {\n  sentimento = 'Positivo';\n} else if (pontuacao < 0) {\n  sentimento = 'Negativo';\n} else {\n  sentimento = 'Neutro';\n}\n\nreturn [{\n  json: {\n    texto_original: texto,\n    sentimento: sentimento,\n    pontuacao: pontuacao,\n    palavras_encontradas: encontradas,\n    preco_alvo: $('Webhook').item.json.body.preco_alvo\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        112
+      ],
+      "id": "a1d95a71-91f3-4e41-8717-01aacdca546c",
+      "name": "Analise de Sentimentos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "77c57cd6-16e8-495b-9630-b1d9c70863e1",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "Positivo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        112
+      ],
+      "id": "8fb1bd30-395d-47b3-a6b1-3c5ab66aec84",
+      "name": "If - Sentimento Positivo?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "88abc123-def4-5678-abcd-ef1234567890",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "Negativo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        224
+      ],
+      "id": "e996b321-dfe8-4614-96ba-747e782963f9",
+      "name": "If - Sentimento Negativo?"
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=🟢 Sentimento POSITIVO detectado!\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\nPalavras positivas: {{ $json.palavras_encontradas.positivas.join(', ') }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "45bce75d-7436-4a75-803d-65cde11cdaa0",
+      "name": "Telegram - Sentimento Positivo",
+      "webhookId": "26934f63-2c2f-4b44-b94b-46fb4b1a9f6b",
+      "credentials": {
+        "telegramApi": {
+          "id": "VziVr3y10RmmuM1P",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=🔴 Sentimento NEGATIVO detectado!\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\nPalavras negativas: {{ $json.palavras_encontradas.negativas.join(', ') }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        224
+      ],
+      "id": "10e02cf3-1af7-460d-aa9d-318f020d18b3",
+      "name": "Telegram - Sentimento Negativo",
+      "webhookId": "56b70ec0-444e-44e9-8763-2dda0dab0fd1",
+      "credentials": {
+        "telegramApi": {
+          "id": "VziVr3y10RmmuM1P",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=⚪ Sentimento NEUTRO detectado.\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        448
+      ],
+      "id": "5e6d94cb-259b-413a-9037-c19afdff06bc",
+      "name": "Telegram - Sentimento Neutro",
+      "webhookId": "81351594-4177-4fcf-b458-2628502ad663",
+      "credentials": {
+        "telegramApi": {
+          "id": "VziVr3y10RmmuM1P",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Bitcoin Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Bitcoin Price": {
+      "main": [
+        [
+          {
+            "node": "Analise de Sentimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analise de Sentimentos": {
+      "main": [
+        [
+          {
+            "node": "If - Sentimento Positivo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Sentimento Positivo?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Sentimento Positivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If - Sentimento Negativo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Sentimento Negativo?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Sentimento Negativo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - Sentimento Neutro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ee15c0e4-86e5-4548-b6ce-11b412192d60",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "Wm7EDLlOvuc9m3RC",
+  "tags": []
+}
