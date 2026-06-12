@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -1104,
-        112
+        -3136,
+        -144
       ],
-      "id": "7c811720-1fc6-499f-a64b-f55c698e3084",
+      "id": "60aee363-5027-48a4-bc98-f42d5bf2ec6a",
       "name": "Webhook",
       "webhookId": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed"
     },
@@ -25,23 +25,23 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -880,
-        112
+        -2912,
+        -144
       ],
-      "id": "5eb13976-6a5c-4dce-bbda-ef9321f17397",
+      "id": "57bf0e50-5d2e-4e7a-a29a-1ed9fcd20dba",
       "name": "HTTP Request - Bitcoin Price"
     },
     {
       "parameters": {
-        "jsCode": "// Analise de Sentimentos por palavras-chave\n// Recebe o texto do campo 'mensagem' enviado no body do webhook\n\nconst texto = $('Webhook').item.json.body.mensagem || '';\nconst textoLower = texto.toLowerCase();\n\n// Palavras positivas\nconst palavrasPositivas = [\n  'otimo', 'otima', 'excelente', 'bom', 'boa', 'maravilhoso', 'maravilhosa',\n  'perfeito', 'perfeita', 'incrivel', 'fantastico', 'fantastica', 'amei',\n  'adorei', 'gostei', 'feliz', 'alegre', 'satisfeito', 'satisfeita',\n  'recomendo', 'aprovado', 'aprovei', 'positivo', 'subiu', 'alta', 'lucro',\n  'ganho', 'valorizou', 'cresceu', 'subindo', 'aumento'\n];\n\n// Palavras negativas\nconst palavrasNegativas = [\n  'ruim', 'pessimo', 'pessima', 'terrivel', 'horrivel', 'odiei', 'odio',\n  'nao gostei', 'problema', 'erro', 'falha', 'decepcionante', 'triste',\n  'insatisfeito', 'insatisfeita', 'reprovado', 'negativo', 'caiu', 'baixa',\n  'prejuizo', 'perda', 'desvalorizou', 'caindo', 'queda', 'despencou'\n];\n\nlet pontuacao = 0;\nconst encontradas = { positivas: [], negativas: [] };\n\nfor (const palavra of palavrasPositivas) {\n  if (textoLower.includes(palavra)) {\n    pontuacao += 1;\n    encontradas.positivas.push(palavra);\n  }\n}\n\nfor (const palavra of palavrasNegativas) {\n  if (textoLower.includes(palavra)) {\n    pontuacao -= 1;\n    encontradas.negativas.push(palavra);\n  }\n}\n\nlet sentimento;\nif (pontuacao > 0) {\n  sentimento = 'Positivo';\n} else if (pontuacao < 0) {\n  sentimento = 'Negativo';\n} else {\n  sentimento = 'Neutro';\n}\n\nreturn [{\n  json: {\n    texto_original: texto,\n    sentimento: sentimento,\n    pontuacao: pontuacao,\n    palavras_encontradas: encontradas,\n    preco_alvo: $('Webhook').item.json.body.preco_alvo\n  }\n}];"
+        "jsCode": "// Analise baseada no preço do Bitcoin vs preço-alvo\nconst precoBitcoin = $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd;\nconst precoAlvo = $('Webhook').item.json.body.preco_alvo;\n\nlet sentimento;\nlet pontuacao;\nlet mensagem;\n\nif (precoBitcoin > precoAlvo) {\n  sentimento = 'Positivo';\n  pontuacao = precoBitcoin - precoAlvo;\n  mensagem = `Bitcoin acima do alvo! +$${pontuacao.toFixed(2)}`;\n} else if (precoBitcoin < precoAlvo) {\n  sentimento = 'Negativo';\n  pontuacao = precoBitcoin - precoAlvo;\n  mensagem = `Bitcoin abaixo do alvo! $${pontuacao.toFixed(2)}`;\n} else {\n  sentimento = 'Neutro';\n  pontuacao = 0;\n  mensagem = `Bitcoin exatamente no preço alvo.`;\n}\n\nreturn [{\n  json: {\n    preco_bitcoin: precoBitcoin,\n    preco_alvo: precoAlvo,\n    diferenca: pontuacao,\n    sentimento: sentimento,\n    mensagem: mensagem\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -656,
-        112
+        -2688,
+        -144
       ],
-      "id": "a1d95a71-91f3-4e41-8717-01aacdca546c",
+      "id": "b1cedfa8-0411-4960-a9ad-d20246452430",
       "name": "Analise de Sentimentos"
     },
     {
@@ -71,10 +71,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -448,
-        112
+        -2480,
+        -144
       ],
-      "id": "8fb1bd30-395d-47b3-a6b1-3c5ab66aec84",
+      "id": "d30d8b39-97ea-4d88-87aa-9e8dcfc56c0d",
       "name": "If - Sentimento Positivo?"
     },
     {
@@ -104,10 +104,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -224,
-        224
+        -2256,
+        -32
       ],
-      "id": "e996b321-dfe8-4614-96ba-747e782963f9",
+      "id": "b2645d0c-8eff-4f0e-8070-49b4423192aa",
       "name": "If - Sentimento Negativo?"
     },
     {
@@ -119,15 +119,15 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -2032,
+        -256
       ],
-      "id": "45bce75d-7436-4a75-803d-65cde11cdaa0",
+      "id": "e4503e3a-63fb-4126-8c07-354ccad055ca",
       "name": "Telegram - Sentimento Positivo",
       "webhookId": "26934f63-2c2f-4b44-b94b-46fb4b1a9f6b",
       "credentials": {
         "telegramApi": {
-          "id": "VziVr3y10RmmuM1P",
+          "id": "kMB8bhl1DC4wt1aQ",
           "name": "Telegram account"
         }
       }
@@ -141,15 +141,15 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        224
+        -2032,
+        -32
       ],
-      "id": "10e02cf3-1af7-460d-aa9d-318f020d18b3",
+      "id": "a5b197dd-d416-4f16-8a37-d25fcd25698a",
       "name": "Telegram - Sentimento Negativo",
       "webhookId": "56b70ec0-444e-44e9-8763-2dda0dab0fd1",
       "credentials": {
         "telegramApi": {
-          "id": "VziVr3y10RmmuM1P",
+          "id": "kMB8bhl1DC4wt1aQ",
           "name": "Telegram account"
         }
       }
@@ -163,15 +163,15 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        448
+        -2032,
+        192
       ],
-      "id": "5e6d94cb-259b-413a-9037-c19afdff06bc",
+      "id": "b518a6a1-5be9-4d3f-b010-23d2c54f0b0e",
       "name": "Telegram - Sentimento Neutro",
       "webhookId": "81351594-4177-4fcf-b458-2628502ad663",
       "credentials": {
         "telegramApi": {
-          "id": "VziVr3y10RmmuM1P",
+          "id": "kMB8bhl1DC4wt1aQ",
           "name": "Telegram account"
         }
       }
@@ -254,11 +254,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ee15c0e4-86e5-4548-b6ce-11b412192d60",
+  "versionId": "956bf972-193b-41d7-a07d-04b45065c210",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
   },
-  "id": "Wm7EDLlOvuc9m3RC",
+  "id": "OUmQHAGzQNDdcoas",
   "tags": []
 }
