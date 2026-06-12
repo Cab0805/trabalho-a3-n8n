@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -624,
-        96
+        -3136,
+        -144
       ],
-      "id": "e29437fd-a276-40f4-9401-f781475a1f35",
+      "id": "60aee363-5027-48a4-bc98-f42d5bf2ec6a",
       "name": "Webhook",
       "webhookId": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed"
     },
@@ -25,10 +25,169 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -416,
-        96
+        -2912,
+        -144
       ],
-      "id": "463b2002-1fba-4f45-b8ab-b52353125ad1",
+      "id": "57bf0e50-5d2e-4e7a-a29a-1ed9fcd20dba",
+      "name": "HTTP Request - Bitcoin Price"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analise baseada no preço do Bitcoin vs preço-alvo\nconst precoBitcoin = $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd;\nconst precoAlvo = $('Webhook').item.json.body.preco_alvo;\n\nlet sentimento;\nlet pontuacao;\nlet mensagem;\n\nif (precoBitcoin > precoAlvo) {\n  sentimento = 'Positivo';\n  pontuacao = precoBitcoin - precoAlvo;\n  mensagem = `Bitcoin acima do alvo! +$${pontuacao.toFixed(2)}`;\n} else if (precoBitcoin < precoAlvo) {\n  sentimento = 'Negativo';\n  pontuacao = precoBitcoin - precoAlvo;\n  mensagem = `Bitcoin abaixo do alvo! $${pontuacao.toFixed(2)}`;\n} else {\n  sentimento = 'Neutro';\n  pontuacao = 0;\n  mensagem = `Bitcoin exatamente no preço alvo.`;\n}\n\nreturn [{\n  json: {\n    preco_bitcoin: precoBitcoin,\n    preco_alvo: precoAlvo,\n    diferenca: pontuacao,\n    sentimento: sentimento,\n    mensagem: mensagem\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        -144
+      ],
+      "id": "b1cedfa8-0411-4960-a9ad-d20246452430",
+      "name": "Analise de Sentimentos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "77c57cd6-16e8-495b-9630-b1d9c70863e1",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "Positivo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2480,
+        -144
+      ],
+      "id": "d30d8b39-97ea-4d88-87aa-9e8dcfc56c0d",
+      "name": "If - Sentimento Positivo?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "88abc123-def4-5678-abcd-ef1234567890",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "Negativo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2256,
+        -32
+      ],
+      "id": "b2645d0c-8eff-4f0e-8070-49b4423192aa",
+      "name": "If - Sentimento Negativo?"
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=🟢 Sentimento POSITIVO detectado!\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\nPalavras positivas: {{ $json.palavras_encontradas.positivas.join(', ') }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2032,
+        -256
+      ],
+      "id": "e4503e3a-63fb-4126-8c07-354ccad055ca",
+      "name": "Telegram - Sentimento Positivo",
+      "webhookId": "26934f63-2c2f-4b44-b94b-46fb4b1a9f6b",
+      "credentials": {
+        "telegramApi": {
+          "id": "kMB8bhl1DC4wt1aQ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=🔴 Sentimento NEGATIVO detectado!\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\nPalavras negativas: {{ $json.palavras_encontradas.negativas.join(', ') }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2032,
+        -32
+      ],
+      "id": "a5b197dd-d416-4f16-8a37-d25fcd25698a",
+      "name": "Telegram - Sentimento Negativo",
+      "webhookId": "56b70ec0-444e-44e9-8763-2dda0dab0fd1",
+      "credentials": {
+        "telegramApi": {
+          "id": "kMB8bhl1DC4wt1aQ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5236325651",
+        "text": "=⚪ Sentimento NEUTRO detectado.\n\nMensagem: {{ $json.texto_original }}\nPontuação: {{ $json.pontuacao }}\n\n💰 Preço atual Bitcoin: ${{ $('HTTP Request - Bitcoin Price').item.json.bitcoin.usd }}\n🎯 Preço alvo: ${{ $json.preco_alvo }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2032,
+        192
+      ],
+      "id": "b518a6a1-5be9-4d3f-b010-23d2c54f0b0e",
+      "name": "Telegram - Sentimento Neutro",
+      "webhookId": "81351594-4177-4fcf-b458-2628502ad663",
+      "credentials": {
+        "telegramApi": {
+          "id": "kMB8bhl1DC4wt1aQ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2528,
+        832
+      ],
+      "id": "ed7ab7b7-3c94-444b-a5d4-a5692306e1d7",
       "name": "HTTP Request"
     },
     {
@@ -44,10 +203,10 @@
             {
               "id": "77c57cd6-16e8-495b-9630-b1d9c70863e1",
               "leftValue": "={{$json.bitcoin.usd}}",
-              "rightValue": "={{$('Webhook').item.json.body.preco_alvo}}",
+              "rightValue": "={{$('Webhook1').item.json.body.preco_alvo}}",
               "operator": {
                 "type": "number",
-                "operation": "lt"
+                "operation": "gt"
               }
             }
           ],
@@ -58,10 +217,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -208,
-        96
+        -2320,
+        832
       ],
-      "id": "d5ff37ad-1fad-4e1f-8834-0eed74937475",
+      "id": "5ce74f6b-2464-44b1-b1f0-4bd5afcd9619",
       "name": "If"
     },
     {
@@ -73,15 +232,15 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -2112,
+        736
       ],
-      "id": "6a87876d-5315-48e0-9da6-592ecb7daa60",
+      "id": "001d3e7f-5fe0-48f3-894a-90fb9e29cf95",
       "name": "Send a text message",
       "webhookId": "35d39f3a-ee21-4c5e-890b-cbbf4d694588",
       "credentials": {
         "telegramApi": {
-          "id": "NIS6I5PW1Sr1qvyU",
+          "id": "kMB8bhl1DC4wt1aQ",
           "name": "Telegram account"
         }
       }
@@ -95,18 +254,34 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        192
+        -2112,
+        928
       ],
-      "id": "0217e148-cf4d-465d-8f72-e79c3892ca96",
+      "id": "c50048bc-a1f0-44d4-a52d-f3e27fad9707",
       "name": "Send a text message1",
       "webhookId": "35d39f3a-ee21-4c5e-890b-cbbf4d694588",
       "credentials": {
         "telegramApi": {
-          "id": "NIS6I5PW1Sr1qvyU",
+          "id": "kMB8bhl1DC4wt1aQ",
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2736,
+        832
+      ],
+      "id": "42a4bfe3-743c-4909-ad5a-fc1b57b7d61c",
+      "name": "Webhook1",
+      "webhookId": "6124d18d-f3aa-4e42-94da-f35cdfa6ceed"
     }
   ],
   "pinData": {},
@@ -115,7 +290,65 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "HTTP Request - Bitcoin Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Bitcoin Price": {
+      "main": [
+        [
+          {
+            "node": "Analise de Sentimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analise de Sentimentos": {
+      "main": [
+        [
+          {
+            "node": "If - Sentimento Positivo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Sentimento Positivo?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Sentimento Positivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If - Sentimento Negativo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Sentimento Negativo?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Sentimento Negativo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - Sentimento Neutro",
             "type": "main",
             "index": 0
           }
@@ -150,6 +383,17 @@
           }
         ]
       ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -157,11 +401,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "993833cc-17de-483a-8e2f-90ae610c2295",
+  "versionId": "7f867646-4fb9-4d91-90c4-c4df7eb385c5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
   },
-  "id": "s70XoKHOvPAem3AM",
+  "id": "OUmQHAGzQNDdcoas",
   "tags": []
 }
